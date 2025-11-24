@@ -15,7 +15,7 @@ private:
 
 public:
     VectorSumCalculator(size_t n) : size(n) {
-        // Инициализируем векторы случайными числами
+       
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<int> dist(1, 100);
@@ -30,14 +30,13 @@ public:
         }
     }
 
-    // Последовательное вычисление (1 поток)
+ 
     void sequentialSum() {
         for (size_t i = 0; i < size; ++i) {
             result[i] = vector1[i] + vector2[i];
         }
     }
 
-    // Параллельное вычисление
     void parallelSum(int numThreads) {
         std::vector<std::thread> threads;
 
@@ -63,7 +62,7 @@ public:
         }
     }
 
-    // Проверка корректности результатов
+   
     bool verifyResults() {
         std::vector<int> sequentialResult(size);
         for (size_t i = 0; i < size; ++i) {
@@ -73,7 +72,7 @@ public:
     }
 };
 
-// Функция для измерения времени выполнения
+
 template<typename Func>
 double measureTime(Func func) {
     auto start = std::chrono::high_resolution_clock::now();
@@ -84,27 +83,22 @@ double measureTime(Func func) {
 }
 
 int main() {
-    // Устанавливаем локаль для вывода кириллицы
+    
     setlocale(LC_ALL, "Russian");
-
-    // Выводим количество аппаратных ядер
     unsigned int numCores = std::thread::hardware_concurrency();
     std::cout << "Доступное количество аппаратных ядер: " << numCores << std::endl;
     std::cout << std::endl;
-
-    // Размеры массивов для тестирования
+ 
     std::vector<size_t> sizes = { 1000, 10000, 100000, 1000000 };
 
-    // Количество потоков для тестирования
     std::vector<int> threadCounts = { 1, 2, 4, 8, 16 };
 
-    // Создаем таблицу для результатов
     std::vector<std::vector<double>> results(
         threadCounts.size(),
         std::vector<double>(sizes.size(), 0.0)
     );
 
-    // Запускаем тесты
+    
     for (size_t sizeIdx = 0; sizeIdx < sizes.size(); ++sizeIdx) {
         size_t size = sizes[sizeIdx];
         std::cout << "Тестирование для размера: " << size << " элементов" << std::endl;
@@ -124,8 +118,6 @@ int main() {
                 });
 
             results[threadIdx][sizeIdx] = time;
-
-            // Проверяем корректность результатов
             if (!calculator.verifyResults()) {
                 std::cout << "Ошибка: некорректные результаты для "
                     << numThreads << " потоков!" << std::endl;
@@ -136,21 +128,17 @@ int main() {
         std::cout << std::endl;
     }
 
-    // Выводим итоговую таблицу
     std::cout << "ИТОГОВАЯ ТАБЛИЦА ПРОИЗВОДИТЕЛЬНОСТИ" << std::endl;
     std::cout << "====================================" << std::endl;
 
-    // Заголовок таблицы
     std::cout << std::setw(8) << "Потоки" << " |";
     for (size_t size : sizes) {
         std::cout << std::setw(12) << size << " |";
     }
     std::cout << std::endl;
 
-    // Разделитель
     std::cout << std::string(8 + (sizes.size() * 15), '-') << std::endl;
 
-    // Данные таблицы
     for (size_t threadIdx = 0; threadIdx < threadCounts.size(); ++threadIdx) {
         std::cout << std::setw(8) << threadCounts[threadIdx] << " |";
         for (size_t sizeIdx = 0; sizeIdx < sizes.size(); ++sizeIdx) {
@@ -160,7 +148,6 @@ int main() {
         std::cout << std::endl;
     }
 
-    // Анализ оптимального количества потоков
     std::cout << std::endl << "АНАЛИЗ ОПТИМАЛЬНОГО КОЛИЧЕСТВА ПОТОКОВ:" << std::endl;
     std::cout << "====================================" << std::endl;
 
@@ -182,3 +169,4 @@ int main() {
 
     return 0;
 }
+
