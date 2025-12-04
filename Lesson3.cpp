@@ -19,7 +19,7 @@ int main() {
         std::cerr << "Ошибка: не удалось создать сокет\n";
         return 1;
     }
-    std::cout << "✅ Сокет создан.\n";
+    std::cout << " Сокет создан.\n";
 
 
     struct sockaddr_in server_addr;
@@ -77,3 +77,4 @@ int main() {
 
     return 0;
 }
+
