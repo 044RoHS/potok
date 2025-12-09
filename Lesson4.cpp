@@ -1,91 +1,101 @@
-﻿#include <iostream>
+#include <iostream>
 #include <vector>
-#include <thread>
 #include <future>
-#include <cmath>
+#include <algorithm>
 
-void apply_to_range(std::vector<int>& vec, size_t start, size_t end) {
-    for (size_t i = start; i < end; ++i) {
-        vec[i] = vec[i] * vec[i];  
-    }
+const int MIN_SIZE = 1000;
+
+void square(int& x) {
+    x = x * x;
 }
 
-void parallel_for_each(std::vector<int>& vec, int num_threads = 4) {
-    size_t n = vec.size();
-    if (n == 0) return;
+void parallel_for_each(std::vector<int>& vec, size_t start, size_t end) {
+    size_t count = end - start;
 
-    if (num_threads > static_cast<int>(n)) {
-        num_threads = static_cast<int>(n);
-    }
-
-    size_t chunk_size = n / num_threads;
-    size_t remainder = n % num_threads;  
-
-    std::vector<std::future<void>> futures;
-
-    size_t start = 0;
-
-    
-    for (int t = 0; t < num_threads - 1; ++t) {
-        size_t current_chunk = chunk_size;
-        if (t < static_cast<int>(remainder)) {
-            current_chunk++;  
+    if (count <= MIN_SIZE) {
+        for (size_t i = start; i < end; ++i) {
+            square(vec[i]); 
         }
-        size_t end = start + current_chunk;
-        futures.push_back(std::async(std::launch::async, [&vec, start, end]() {
-            apply_to_range(vec, start, end);
-            }));
-
-        start = end;  
+        return; 
     }
-    size_t end = n;
-    apply_to_range(vec, start, end);
-    for (auto& fut : futures) {
-        fut.wait();
+
+    size_t mid = start + count / 2;
+
+
+    auto future_first = std::async(std::launch::async, [&vec, start, mid]() {
+        parallel_for_each(vec, start, mid);  
+    });
+
+
+    parallel_for_each(vec, mid, end);
+
+
+    future_first.wait();  
+}
+
+
+void parallel_for_each(std::vector<int>& vec) {
+    if (!vec.empty()) {
+        parallel_for_each(vec, 0, vec.size());
     }
 }
+
 void sequential_for_each(std::vector<int>& vec) {
     for (size_t i = 0; i < vec.size(); ++i) {
-        vec[i] = vec[i] * vec[i];
+        square(vec[i]);
     }
 }
 
-
-void print_vector(const std::vector<int>& vec, const std::string& label) {
-    std::cout << label << ": ";
-    size_t count = std::min<size_t>(10, vec.size());
-    for (size_t i = 0; i < count; ++i) {
-        std::cout << vec[i] << " ";
+void print_vec(const std::vector<int>& v, const std::string& name) {
+    std::cout << name << ": ";
+    for (size_t i = 0; i < v.size() && i < 10; ++i) {
+        std::cout << v[i] << " ";
     }
-    if (vec.size() > 10) std::cout << "...";
+    if (v.size() > 10) std::cout << "...";
     std::cout << "\n";
 }
 
 
 int main() {
-   
-    std::vector<int> data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+    std::vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
     std::cout << "До обработки:\n";
-    print_vector(data, "data");
+    print_vec(data, "data");
 
 
-    std::vector<int> data_seq = data;
-    std::vector<int> data_par = data;
+    auto seq = data;
+    auto par = data;
 
 
-    sequential_for_each(data_seq);
+    sequential_for_each(seq);
     std::cout << "\nПосле последовательной обработки:\n";
-    print_vector(data_seq, "data_seq");
+    print_vec(seq, "последовательно");
 
-   
-    parallel_for_each(data_par, 4);
-    std::cout << "\nПосле параллельной обработки (4 потока):\n";
-    print_vector(data_par, "data_par");
 
-    
-    bool same = (data_seq == data_par);
-    std::cout << "\nРезультаты совпадают? " << (same ? "ДА " : "НЕТ ") << "\n";
+    parallel_for_each(par);
+    std::cout << "\nПосле параллельной обработки:\n";
+    print_vec(par, "параллельно");
+
+    if (seq == par) {
+        std::cout << "\n Результаты совпадают!\n";
+    } else {
+        std::cout << "\n Ошибка: результаты разные!\n";
+    }
+
+    std::cout << "\n--- Большой тест (10 000 элементов) ---\n";
+    std::vector<int> big(10000, 3); 
+    auto big_seq = big;
+    auto big_par = big;
+
+    sequential_for_each(big_seq);
+    parallel_for_each(big_par);
+
+    std::cout << "Первые 5 элементов (должны быть 9): ";
+    for (int i = 0; i < 5; ++i) {
+        std::cout << big_par[i] << " ";
+    }
+    std::cout << "\n Большой тест пройден.\n";
 
     return 0;
 }
